@@ -100,6 +100,10 @@ handling. This audit maps every rubric line to its evidence.
 ## Remaining submission actions (outside the code)
 
 1. Deploy to a public URL (any platform; keep reachable through judging).
-2. Push the image to a registry with an exact tag (e.g. `ghcr.io/<team>/gridwise-llm:0.1.0`) and verify `docker pull` + `/health` from the submitted command.
+2. DONE: image published to GHCR as `ghcr.io/hemalv02/gridwise-llm:0.1.0`
+   (digest `sha256:b8c29384cc5f18a24f017dce2cbadc3b97e1f3b0f1549c44fc5c1889aedd59b8`,
+   multi-arch linux/amd64 + linux/arm64, amd64 smoke-tested end to end).
+   After the deadline, make the GHCR package public together with the repo
+   (package settings, or `gh api --method PATCH /user/packages/container/gridwise-llm -f visibility=public`).
 3. Record the ≤3-minute architecture video (tie-break only).
 4. Repository private during the event, public after the deadline.

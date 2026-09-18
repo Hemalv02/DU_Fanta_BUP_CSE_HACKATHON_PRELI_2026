@@ -12,34 +12,32 @@ optimization service, built to the canonical Problem Statement
 
 ## Architecture
 
-```
-POST /optimize-energy
-        │
-        ▼
-┌───────────────────── API layer (app/api) ─────────────────────┐
-│ request schema validation (400 on structural invalidity)      │
-└──────────────────────────┬────────────────────────────────────┘
-                           ▼
-┌────────────── Service layer (app/services) ───────────────────┐
-│ InterpretationService                                         │
-│   -> LLMRepository (OpenAI SDK, gpt-5.6-sol)                  │
-│      • notes sent as escaped DATA inside untrusted blocks     │
-│      • strict JSON-schema response_format (model cannot emit  │
-│        anything outside the directive contract)               │
-│   -> deterministic guardrails (app/guardrails)                │
-│      • whitelist-only parse, note mapping, hours 0-23 unique  │
-│        ascending, factor∈[0,1], reserve≤capacity, applies     │
-│        semantics forced, per-note rule-based fallback         │
-│ OptimizationService                                           │
-│   -> LPSolverRepository (scipy HiGHS)                          │
-│      • directives become per-hour LP bounds (Section 5.3)     │
-│   -> EnergyService post-processing + FINAL REPLAY validation  │
-│      (energy balance, battery transitions/bounds/rates,       │
-│       effective solar, directive application, neutrality,     │
-│       totals recomputed from hourly_plan)                     │
-└──────────────────────────┬────────────────────────────────────┘
-                           ▼
-             directive_interpretation + hourly_plan + totals
+```mermaid
+flowchart TD
+    Judge["Judge harness"] -->|"GET /health"| Health["Health endpoint<br/>always answers status ok"]
+    Judge -->|"POST /optimize-energy<br/>one scenario JSON"| Validate["Request validation<br/>strict schema, clean 400 for bad input"]
+
+    subgraph Interpret["Interpretation path, the LLM is mandatory here"]
+        LLM["Hosted LLM<br/>OpenAI compatible API, strict JSON schema output"]
+        Guard["Deterministic guardrails<br/>whitelist, normalize and validate every field"]
+        Rules["Rule based fallback<br/>safe failure when the provider is down"]
+    end
+
+    subgraph Optimize["Optimizer"]
+        LP["LP solver, scipy HiGHS<br/>every directive becomes per hour bounds"]
+        Replay["Post processing and final replay<br/>energy balance, battery rules, neutrality"]
+    end
+
+    Validate -->|"operator notes travel as<br/>quoted untrusted data"| LLM
+    LLM -->|"raw structured candidates"| Guard
+    LLM -.->|"provider error after retries"| Rules
+    Rules --> Guard
+    Guard -->|"one validated directive per note, in order"| LP
+    LP --> Replay
+    Replay -.->|"if only rounding failed,<br/>retry with finer precision"| LP
+    Replay --> Side["JSONL request log<br/>optional, off by default, background thread"]
+    Replay --> Out["Response<br/>directive interpretation, 24 hour plan,<br/>totals and plan summary"]
+    Out --> Judge
 ```
 
 Layering: **API → services → repositories** (repository = external
@@ -116,14 +114,17 @@ curl http://127.0.0.1:8000/health          # {"status": "ok"}
 # Run the public samples against the container
 uv run python scripts/run_public_samples.py
 
-# Standalone fallback image (what you submit to the registry):
+# Standalone fallback image (multi-arch: linux/amd64 + linux/arm64):
 docker build -t gridwise-llm:0.1.0 .
 docker run --rm -p 8000:8000 --env-file .env gridwise-llm:0.1.0
 
-# Once pushed, the judge's fallback path is (exact tag, no secrets baked in):
-#   docker pull <registry>/gridwise-llm:0.1.0
-#   docker run --rm -p 8000:8000 --env-file .env <registry>/gridwise-llm:0.1.0
-# The submitted submission form carries the final registry reference and tag.
+# Published fallback image on GHCR (exact tag and digest, no secrets baked in):
+#   docker pull ghcr.io/hemalv02/gridwise-llm:0.1.0
+#   docker run --rm -p 8000:8000 --env-file .env ghcr.io/hemalv02/gridwise-llm:0.1.0
+# Digest: sha256:b8c29384cc5f18a24f017dce2cbadc3b97e1f3b0f1549c44fc5c1889aedd59b8
+# The GHCR package is private during the event (like this repo) and is made
+# public together with the repo after the submission deadline, so the judge
+# can pull it during evaluation.
 ```
 
 The image exposes port 8000 on 0.0.0.0, has a container HEALTHCHECK, runs as
