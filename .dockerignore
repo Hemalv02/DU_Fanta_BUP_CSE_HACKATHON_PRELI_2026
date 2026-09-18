@@ -1,0 +1,27 @@
+# Never bake secrets into the image
+.env
+.env.*
+!.env.example
+
+# Local tooling and caches
+.git
+.gitignore
+.venv
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.DS_Store
+
+# Not needed inside the runtime image
+tests/
+scripts/
+docs/
+README.md
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Request logs (opt-in via REQUEST_LOG_FILE)
+logs/

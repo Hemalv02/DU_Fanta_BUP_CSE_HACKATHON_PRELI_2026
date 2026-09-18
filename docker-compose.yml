@@ -1,0 +1,26 @@
+services:
+  api:
+    build:
+      context: .
+      target: runtime
+    image: gridwise-llm:0.1.0
+    container_name: gridwise-llm
+    ports:
+      - "8000:8000"
+    # Picks up LLM_API_KEY etc. when .env exists; runs in rule-based mode otherwise.
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      ENVIRONMENT: production
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3

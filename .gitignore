@@ -8,3 +8,17 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+
+# Request logs (opt-in via REQUEST_LOG_FILE)
+logs/
+.DS_Store
