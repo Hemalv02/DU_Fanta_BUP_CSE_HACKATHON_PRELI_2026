@@ -45,12 +45,16 @@ def _normalize_hours(raw: Any) -> list[int] | None:
 
 
 def _normalize_factor(raw: Any) -> float | None:
-    """Usable fraction in [0, 1]; repairs percent-like values (e.g. 20 -> 0.2)."""
+    """Usable fraction in [0, 1]; repairs percent-like values (e.g. 20 -> 0.2).
+
+    Values are normalized to 6 decimals so float artifacts from model
+    arithmetic (35.18994492 vs 35.189945) cannot surface downstream.
+    """
     if isinstance(raw, bool) or not isinstance(raw, (int, float)):
         return None
     value = float(raw)
     if 0.0 <= value <= 1.0:
-        return value
+        return round(value, 6)
     if 1.0 < value <= 100.0:  # model emitted "20" meaning 20%
         return round(value / 100.0, 6)
     return None
@@ -62,7 +66,7 @@ def _normalize_non_negative(raw: Any) -> float | None:
     value = float(raw)
     if value != value or value == float("inf") or value < 0:  # NaN/inf/negative
         return None
-    return value
+    return round(value, 6)
 
 
 def _normalize_candidate(
