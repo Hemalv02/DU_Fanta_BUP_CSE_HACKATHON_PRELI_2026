@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     llm_model: str = "gpt-5.6-sol"
     llm_timeout_seconds: float = Field(default=12.0, gt=0.0, le=30.0)
     llm_max_retries: int = Field(default=1, ge=0, le=3)
-    llm_max_output_tokens: int = Field(default=4096, ge=256, le=16384)
+    llm_max_output_tokens: int = Field(default=1024, ge=256, le=16384)
     #: Optional reasoning-effort hint for reasoning models ("low"/"medium"/
     #: "high"). Empty string omits the parameter (safest across providers).
     llm_reasoning_effort: Literal["", "minimal", "low", "medium", "high"] = "low"

@@ -95,7 +95,7 @@ uv run python scripts/run_public_samples.py --base-url http://127.0.0.1:8000
 | `LLM_MODEL` | `gpt-5.6-sol` | Interpretation model |
 | `LLM_TIMEOUT_SECONDS` | `12` | Per-request timeout (worst case `timeout x (retries+1)` is auto-clamped inside the 30 s judge limit) |
 | `LLM_MAX_RETRIES` | `1` | SDK-level retries |
-| `LLM_MAX_OUTPUT_TOKENS` | `4096` | Output token cap |
+| `LLM_MAX_OUTPUT_TOKENS` | `1024` | Output token cap |
 | `LLM_REASONING_EFFORT` | `low` | Latency hint for reasoning models (`""` to omit) |
 | `SCHEDULE_ROUNDING_DECIMALS` | `2` | Decimal places in the returned plan; a plan that only fails replay due to rounding drift is automatically re-rounded finer (4, then 6) |
 | `REQUEST_LOG_FILE` | *(empty — off)* | Enable JSONL logging of every `/optimize-energy` request+response (timestamp, status, latency, bodies). Written by a background thread — zero request-path I/O; no headers/secrets; `/health` not logged |
